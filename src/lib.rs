@@ -1,5 +1,3 @@
-extern crate core;
-
 use halo2_proofs::plonk::Expression;
 use halo2_proofs::poly::Rotation;
 use halo2_proofs::{arithmetic::FieldExt, circuit::*, plonk::*};
