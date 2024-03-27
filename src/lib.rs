@@ -5,29 +5,50 @@ use halo2_proofs::poly::Rotation;
 use halo2_proofs::{arithmetic::FieldExt, circuit::*, plonk::*};
 use std::marker::PhantomData;
 
-// TODO: add proper documentation across all
+// Current circuit structure
+// example 3^4 = 81 [base = 3, exp = 4, result = 81]
+// result = running product starting with the base
+// exp = decrements the initial exp by 1 each step
+// base = duplicates the base so I can have access to it while constraining
+// instance = public inputs [3, 4, 81]
 
-// TODO: add documentation
+// result | exp | base | selector | instance
+//   3    |  4  |  3   |    1     |    3
+//   9    |  3  |  3   |    1     |    4
+//  27    |  2  |  3   |    1     |    81
+//  81    |  1  |  3   |    0     |    _
+
+// Constraints
+// result_i * base_i = result_{i+1}
+// exp_i - 1 = exp_{i+1}
+// base_i = base_{i+1}
+
+// Discussion
+// This can be done with only two advice columns
+// the first entry of the result column already contains the base so I shouldn't need the base column
+// result | exp | selector | instance
+//   3    |  4  |    1     |    3
+//   9    |  3  |    1     |    4
+//  27    |  2  |    1     |    81
+//  81    |  1  |    0     |    _
+// updated constraints
+// result_i * result[0] = result_{i+1}
+// exp_i - 1 = exp_{i + 1}
+// but struggled to reference result[0] from the gate definition
+
 #[derive(Clone)]
 struct ExpConfig {
-    // TODO: figure out if there is a better way to do this:
-    //  - maybe don't use two columns, compress to 1
-    //  - or bit decomposition for super fast exponentiation
-    // can reduce it to two columns, use the first element of the result column as the base
-    // but how do I get that into meta.create_gate??
     pub advice: [Column<Advice>; 3],
     pub selector: Selector,
     pub instance: Column<Instance>,
 }
 
-// TODO: add documentation
 struct ExpChip<F: FieldExt> {
     config: ExpConfig,
     _marker: PhantomData<F>,
 }
 
 impl<F: FieldExt> ExpChip<F> {
-    // TODO: is this used?
     fn construct(config: ExpConfig) -> Self {
         Self {
             config,
@@ -36,8 +57,6 @@ impl<F: FieldExt> ExpChip<F> {
     }
 
     fn configure(meta: &mut ConstraintSystem<F>) -> ExpConfig {
-        // TODO: add better comments here
-        // TODO: maybe name this to result column
         let result_column = meta.advice_column();
         let exponent_column = meta.advice_column();
         let base_column = meta.advice_column();
@@ -72,10 +91,7 @@ impl<F: FieldExt> ExpChip<F> {
         }
     }
 
-    // TODO: refactor this
     fn assign(&self, mut layouter: impl Layouter<F>) -> Result<AssignedCell<F, F>, Error> {
-        // what does one do here?
-        // going to be using a single region
         // TODO: look into the hacknode use of regions, see how they handle overlapping elements
         layouter.assign_region(
             || "exp_region",
