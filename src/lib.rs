@@ -211,8 +211,8 @@ mod tests {
 
     #[test]
     fn test_exp_circuit() {
-        let k = 4;
-        let public_inputs = vec![Fp::from(3), Fp::from(4), Fp::from(81)];
+        let k = 5;
+        let public_inputs = vec![Fp::from(3), Fp::from(13), Fp::from(1_594_323)];
         let circuit = ExpCircuit::<Fp>::default();
         let prover = MockProver::run(k, &circuit, vec![public_inputs]).unwrap();
         prover.assert_satisfied();
