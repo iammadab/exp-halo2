@@ -92,7 +92,7 @@ impl<F: FieldExt> ExpChip<F> {
     }
 
     fn assign(&self, mut layouter: impl Layouter<F>) -> Result<AssignedCell<F, F>, Error> {
-        // TODO: look into the hacknode use of regions, see how they handle overlapping elements
+        // TODO: look into splitting into smaller regions, how is region overlap handled?
         layouter.assign_region(
             || "exp_region",
             |mut region| {
@@ -123,9 +123,6 @@ impl<F: FieldExt> ExpChip<F> {
                     0,
                 )?;
 
-                // continuously update the rows until some exponent is 1
-                // what do we condition the for loop on
-                // what do we do in the for loop?
                 let mut i = 1;
                 while let Some(value) = exp_cell.value() {
                     if value == &F::one() {
@@ -153,6 +150,7 @@ impl<F: FieldExt> ExpChip<F> {
                         i,
                         || Ok(next_exp),
                     )?;
+                    // TODO: this feels so wrong and wasteful
                     base_cell = region.assign_advice(
                         || "next_base",
                         self.config.advice[2],
